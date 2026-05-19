@@ -15,11 +15,8 @@ A portfolio-ready cyber threat intelligence dashboard built with Next.js. It vis
 
 ## Preview
 
-Add a deployed screenshot here after the first Vercel deployment.
+<img width="1901" height="937" alt="image" src="https://github.com/user-attachments/assets/a8f31de3-ee5b-4b89-8224-951b399291a7" />
 
-```md
-![Cyber Attack Monitoring Dashboard](./public/dashboard-preview.png)
-```
 
 ## Features
 
