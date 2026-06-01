@@ -152,23 +152,6 @@ pnpm build
    - Invalid searches are rejected.
    - Response headers include the configured security headers.
 
-## GitHub Launch
-
-If this folder is not yet a Git repository:
-
-```bash
-git init
-git add .
-git commit -m "Prepare secure public launch"
-```
-
-Create a public GitHub repository named `cyber-attack-monitoring-dashboard`, then connect and push:
-
-```bash
-git remote add origin https://github.com/<your-username>/cyber-attack-monitoring-dashboard.git
-git branch -M main
-git push -u origin main
-```
 
 ## Scripts
 
