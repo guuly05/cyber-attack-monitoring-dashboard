@@ -29,6 +29,25 @@ A portfolio-ready cyber threat intelligence dashboard built with Next.js. It vis
 - Vercel Analytics enabled only in production.
 - Production security headers configured in `next.config.mjs`.
 
+## Completely Keyless – No Registration Required
+
+This dashboard operates entirely on free, publicly accessible APIs that require no authentication or registration. You can simply clone the repository and run it without configuring any API keys. The app gathers threat intelligence dynamically from the following sources, gracefully respecting their free-tier rate limits:
+
+- **ContrastAPI** (CVE/EPSS/KEV – 100 req/hr, no key)
+- **ReportedIP** (IP threat intel – 1,000 checks/day, no key)
+- **IPDetails.io** (IP geolocation + threat intel, no key)
+- **crt.sh** (subdomain discovery, no key, no published limits)
+- **ASN Lookup (RIPEstat)** (ASN data, no key)
+- **NVD/NIST CVE API** (Vulnerability data, no key)
+- **CISA KEV** (Known exploited vulnerabilities, no key)
+- **CIRCL CVE API** (Vulnerability summaries, no key)
+- **CIRCL hashlookup** (Hash reputation, no key)
+- **URLhaus** (Malicious URLs, no key)
+- **ThreatFox** (IOC search, no key)
+- **SANS ISC/DShield** (IP attack logs, no key)
+
+*(Note: The dashboard optionally supports an `ABUSEIPDB_API_KEY` for live IP reputation, but falls back to realistic mock data natively if omitted.)*
+
 ## Tech Stack
 
 - **Framework:** Next.js App Router
@@ -43,10 +62,16 @@ A portfolio-ready cyber threat intelligence dashboard built with Next.js. It vis
 
 | Source | Current behavior | Notes |
 | --- | --- | --- |
-| URLHaus | Simulated route data | The dashboard currently generates realistic mock indicators for portfolio/demo use. |
-| ThreatFox | Simulated route data | The dashboard currently generates realistic mock IOCs for portfolio/demo use. |
-| AbuseIPDB | Live API when configured | Requires `ABUSEIPDB_API_KEY`; falls back to mock data when absent. |
-| CIRCL CVE | Live public API | Used for CVE detail lookups. |
+| ContrastAPI | Live public API | CVE/EPSS/KEV and risk scoring. |
+| ReportedIP | Live public API | IP threat intelligence. |
+| IPDetails.io | Live public API | Network infrastructure and geolocation. |
+| crt.sh | Live public API | Certificate transparency and subdomains. |
+| RIPEstat | Live public API | ASN and BGP routing data. |
+| NVD / CISA KEV | Live public API | Primary vulnerability information. |
+| CIRCL | Live public API | Secondary CVE summaries and hash lookups. |
+| URLhaus / ThreatFox | Live public API & Mocked feeds | Live search APIs; dashboard cards optionally use simulated streams for demo visual volume. |
+| SANS ISC/DShield | Live public API | Global sensor threat observations. |
+| AbuseIPDB | Mock data (or Live if configured) | Returns simulated data unless `ABUSEIPDB_API_KEY` is explicitly configured. |
 
 This project is a monitoring and education dashboard. Treat simulated indicators as demo data, not operational intelligence.
 
@@ -81,27 +106,12 @@ npm exec pnpm@10.0.0 -- install
 
 ```bash
 pnpm install
-```
-
-Create a local environment file:
-
-```bash
-cp .env.example .env.local
-```
-
-Optionally add your AbuseIPDB key:
-
-```env
-ABUSEIPDB_API_KEY=your_abuseipdb_key_here
-```
-
-Start the development server:
-
-```bash
 pnpm dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
+
+The dashboard operates out-of-the-box using purely keyless APIs. No `.env.local` file or key configuration is required to get started.
 
 ## Security
 
@@ -136,17 +146,10 @@ pnpm build
    - Install command: `pnpm install`
    - Build command: `pnpm build`
    - Output directory: Next.js default
-4. Add this environment variable in Vercel Project Settings:
-
-```env
-ABUSEIPDB_API_KEY=your_abuseipdb_key_here
-```
-
-5. Deploy and verify:
+4. Deploy and verify:
    - The dashboard loads.
    - Threat feed cards render.
    - Invalid searches are rejected.
-   - IP lookup works with and without `ABUSEIPDB_API_KEY`.
    - Response headers include the configured security headers.
 
 ## GitHub Launch
@@ -179,9 +182,9 @@ git push -u origin main
 
 ## Environment Variables
 
-| Variable | Required | Description |
-| --- | --- | --- |
-| `ABUSEIPDB_API_KEY` | No | Enables live AbuseIPDB IP reputation lookups. Without it, the route returns mock data. |
+No environment variables are required to run this dashboard. It relies on publicly accessible, authentication-free APIs. 
+
+*(Optional)* You may define `ABUSEIPDB_API_KEY` to enable live lookups against AbuseIPDB instead of the default mock fallback data.
 
 ## License
 

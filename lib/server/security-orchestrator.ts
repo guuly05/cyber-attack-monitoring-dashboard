@@ -25,30 +25,14 @@ type ProviderId =
   | "reportedip"
   | "ipdetails"
   | "crtsh"
-  | "sslmate"
-  | "dnschronicle"
   | "ripestat"
-  | "guardianintel"
-  | "urlscan"
-  | "abusix"
-  | "anyrun"
-  | "spamhaus"
   | "nvd"
   | "cisa-kev"
   | "circl-cve"
   | "circl-hashlookup"
-  | "pulsedive"
-  | "hunter"
-  | "dehashed"
-  | "socradar"
-  | "otx"
-  | "misp"
   | "dshield"
-  | "securitytrails"
-  | "whoisxml"
   | "urlhaus"
   | "threatfox"
-  | "greynoise"
   | "abuseipdb"
 
 interface ProviderRuntime {
@@ -390,50 +374,7 @@ const providers: ProviderDefinition[] = [
       }
     },
   },
-  keyedProvider(
-    {
-      id: "sslmate",
-      name: "SSLMate CT Search",
-      types: ["domain", "company"],
-      ttlMs: 15 * 60 * 1000,
-      minIntervalMs: 36_000,
-      quotaLabel: "100 queries/hour, API key",
-      keyEnv: "SSLMATE_API_KEY",
-      endpointEnv: "SSLMATE_CT_API_URL",
-    },
-    async (query, _type, key, endpoint) => {
-      const started = now()
-      const base = endpoint || "https://api.certspotter.com/v1/issuances"
-      const data = await fetchJson(`${base}?domain=${encodeURIComponent(query)}&include_subdomains=true&expand=dns_names`, {
-        headers: { Authorization: `Bearer ${key}` },
-      })
-      const rows = Array.isArray(data) ? (data as Array<Record<string, unknown>>) : []
-      return {
-        source: source("sslmate", "SSLMate CT Search", "fulfilled", started, { records: rows.length }),
-        exposures: rows.slice(0, 40).flatMap((row) =>
-          (Array.isArray(row.dns_names) ? row.dns_names : []).slice(0, 10).map((name) => ({
-            source: "SSLMate CT Search",
-            type: "certificate" as const,
-            value: escapePlainText(name),
-            observedAt: escapePlainText(row.not_before),
-          }))
-        ),
-      }
-    }
-  ),
-  keyedProvider(
-    {
-      id: "dnschronicle",
-      name: "DNS Chronicle",
-      types: ["domain"],
-      ttlMs: 15 * 60 * 1000,
-      minIntervalMs: 10_000,
-      quotaLabel: "500 free credits, API key",
-      keyEnv: "DNS_CHRONICLE_API_KEY",
-      endpointEnv: "DNS_CHRONICLE_API_URL",
-    },
-    async (query, _type, key, endpoint) => configurableJsonSource("dnschronicle", "DNS Chronicle", endpoint, key, query, "dns")
-  ),
+
   {
     id: "ripestat",
     name: "RIPEstat",
@@ -463,11 +404,7 @@ const providers: ProviderDefinition[] = [
       }
     },
   },
-  keyedProvider({ id: "guardianintel", name: "Guardian Intel Community", types: ["ip"], ttlMs: REPORT_TTL_MS, minIntervalMs: 121_000, quotaLabel: "50 queries/week, API key", keyEnv: "GUARDIAN_INTEL_API_KEY", endpointEnv: "GUARDIAN_INTEL_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("guardianintel", "Guardian Intel Community", endpoint, key, query, "ip-abuse")),
-  keyedProvider({ id: "urlscan", name: "urlscan.io", types: ["domain"], ttlMs: REPORT_TTL_MS, minIntervalMs: 2_000, quotaLabel: "50 public queries/day, API key", keyEnv: "URLSCAN_API_KEY", endpointEnv: "URLSCAN_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("urlscan", "urlscan.io", endpoint || "https://urlscan.io/api/v1/search/?q=domain:", key, query, "scan")),
-  keyedProvider({ id: "abusix", name: "Abusix Guardian Intel", types: ["ip"], ttlMs: REPORT_TTL_MS, minIntervalMs: 121_000, quotaLabel: "50 queries/week, API key", keyEnv: "ABUSIX_API_KEY", endpointEnv: "ABUSIX_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("abusix", "Abusix Guardian Intel", endpoint, key, query, "abuse")),
-  keyedProvider({ id: "anyrun", name: "ANY.RUN", types: ["domain", "ip", "hash"], ttlMs: REPORT_TTL_MS, minIntervalMs: 2_000, quotaLabel: "Free tier, API key", keyEnv: "ANYRUN_API_KEY", endpointEnv: "ANYRUN_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("anyrun", "ANY.RUN", endpoint, key, query, "malware-research")),
-  keyedProvider({ id: "spamhaus", name: "Spamhaus Intelligence", types: ["domain", "ip"], ttlMs: REPORT_TTL_MS, minIntervalMs: 2_000, quotaLabel: "Developer license, API key", keyEnv: "SPAMHAUS_API_KEY", endpointEnv: "SPAMHAUS_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("spamhaus", "Spamhaus Intelligence", endpoint, key, query, "reputation")),
+
   {
     id: "nvd",
     name: "NVD/NIST CVE API",
@@ -579,15 +516,7 @@ const providers: ProviderDefinition[] = [
       }
     },
   },
-  keyedProvider({ id: "pulsedive", name: "Pulsedive", types: ["domain", "ip", "hash"], ttlMs: REPORT_TTL_MS, minIntervalMs: 350, quotaLabel: "250 requests/day, API key", keyEnv: "PULSEDIVE_API_KEY", endpointEnv: "PULSEDIVE_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("pulsedive", "Pulsedive", endpoint || "https://pulsedive.com/api/info.php?indicator=", key, query, "ioc")),
-  keyedProvider({ id: "hunter", name: "Hunter.io", types: ["domain", "company"], ttlMs: 15 * 60 * 1000, minIntervalMs: 2_000, quotaLabel: "50 requests/month, API key", keyEnv: "HUNTER_API_KEY", endpointEnv: "HUNTER_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("hunter", "Hunter.io", endpoint || "https://api.hunter.io/v2/domain-search?domain=", key, query, "email")),
-  keyedProvider({ id: "dehashed", name: "DeHashed", types: ["domain", "company"], ttlMs: 15 * 60 * 1000, minIntervalMs: 2_000, quotaLabel: "Account/API key", keyEnv: "DEHASHED_API_KEY", endpointEnv: "DEHASHED_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("dehashed", "DeHashed", endpoint, key, query, "breach")),
-  keyedProvider({ id: "socradar", name: "SOCRadar IOC Radar", types: ["domain", "ip", "hash"], ttlMs: REPORT_TTL_MS, minIntervalMs: 2_000, quotaLabel: "Free tier, API key", keyEnv: "SOCRADAR_API_KEY", endpointEnv: "SOCRADAR_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("socradar", "SOCRadar IOC Radar", endpoint, key, query, "ioc")),
-  keyedProvider({ id: "otx", name: "AlienVault OTX", types: ["domain", "ip", "hash"], ttlMs: REPORT_TTL_MS, minIntervalMs: 1_000, quotaLabel: "Free, API key", keyEnv: "OTX_API_KEY", endpointEnv: "OTX_API_URL" }, async (query, type, key, endpoint) => {
-    const otxType = type === "ip" ? "IPv4" : type === "domain" ? "domain" : "file"
-    return configurableJsonSource("otx", "AlienVault OTX", endpoint || `https://otx.alienvault.com/api/v1/indicators/${otxType}/`, key, query, "pulse")
-  }),
-  keyedProvider({ id: "misp", name: "MISP", types: ["domain", "ip", "hash"], ttlMs: REPORT_TTL_MS, minIntervalMs: 1_000, quotaLabel: "API key", keyEnv: "MISP_API_KEY", endpointEnv: "MISP_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("misp", "MISP", endpoint, key, query, "threat-intel")),
+
   {
     id: "dshield",
     name: "SANS ISC/DShield",
@@ -614,8 +543,7 @@ const providers: ProviderDefinition[] = [
       }
     },
   },
-  keyedProvider({ id: "securitytrails", name: "SecurityTrails", types: ["domain"], ttlMs: 15 * 60 * 1000, minIntervalMs: 2_000, quotaLabel: "50 requests/month, API key", keyEnv: "SECURITYTRAILS_API_KEY", endpointEnv: "SECURITYTRAILS_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("securitytrails", "SecurityTrails", endpoint || "https://api.securitytrails.com/v1/domain/", key, query, "dns-history")),
-  keyedProvider({ id: "whoisxml", name: "WhoisXML API", types: ["domain"], ttlMs: 15 * 60 * 1000, minIntervalMs: 2_000, quotaLabel: "500 credits, API key", keyEnv: "WHOISXML_API_KEY", endpointEnv: "WHOISXML_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("whoisxml", "WhoisXML API", endpoint, key, query, "whois")),
+
   {
     id: "urlhaus",
     name: "URLhaus",
@@ -679,7 +607,7 @@ const providers: ProviderDefinition[] = [
       }
     },
   },
-  keyedProvider({ id: "greynoise", name: "GreyNoise", types: ["ip"], ttlMs: REPORT_TTL_MS, minIntervalMs: 1_000, quotaLabel: "Free tier, API key", keyEnv: "GREYNOISE_API_KEY", endpointEnv: "GREYNOISE_API_URL" }, async (query, _type, key, endpoint) => configurableJsonSource("greynoise", "GreyNoise", endpoint || "https://api.greynoise.io/v3/community/", key, query, "scanner-analysis")),
+
   keyedProvider({ id: "abuseipdb", name: "AbuseIPDB", types: ["ip"], ttlMs: REPORT_TTL_MS, minIntervalMs: 2_000, quotaLabel: "API key", keyEnv: "ABUSEIPDB_API_KEY", endpointEnv: "ABUSEIPDB_API_URL" }, async (query, _type, key, endpoint) => {
     const started = now()
     const base = endpoint || "https://api.abuseipdb.com/api/v2/check"
@@ -713,47 +641,7 @@ const providers: ProviderDefinition[] = [
   }),
 ]
 
-async function configurableJsonSource(
-  id: ProviderId,
-  name: string,
-  endpoint: string,
-  key: string,
-  query: string,
-  category: string
-): Promise<ProviderResult> {
-  const started = now()
-  if (!endpoint) {
-    return {
-      source: source(id, name, "skipped", started, {
-        message: `Configure ${id.toUpperCase().replaceAll("-", "_")}_API_URL for this provider.`,
-      }),
-    }
-  }
-  const separator = endpoint.includes("?") || endpoint.endsWith("/") || endpoint.endsWith("=") ? "" : "?q="
-  const url = `${endpoint}${separator}${encodeURIComponent(query)}`
-  const data = (await fetchJson(url, {
-    headers: {
-      Authorization: `Bearer ${key}`,
-      "API-Key": key,
-      "X-API-Key": key,
-    },
-  })) as Record<string, unknown>
-  const score = Number(data.score ?? data.risk ?? data.confidence ?? 0)
-  const count = Array.isArray(data.results) ? data.results.length : Array.isArray(data.data) ? data.data.length : score ? 1 : 0
-  return {
-    source: source(id, name, "fulfilled", started, { records: count }),
-    reputation: [
-      {
-        source: name,
-        score: score || undefined,
-        verdict: verdictFromScore(score),
-        confidence: score || undefined,
-        categories: [category],
-        summary: escapePlainText(data.summary ?? data.verdict ?? data.message ?? `${name} returned ${count} record(s).`),
-      },
-    ],
-  }
-}
+
 
 async function runProvider(definition: ProviderDefinition, query: string, type: SecurityEntityType): Promise<ProviderResult> {
   const started = now()
