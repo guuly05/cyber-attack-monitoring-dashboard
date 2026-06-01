@@ -5,44 +5,44 @@
 
 :root {
   /* Cyber Defense Dark Theme - Always Dark */
-  --background: #000000;
-  --foreground: #E2E8F0;
-  --card: #0B0F19;
+  --background: #020303;
+  --foreground: #E2F5F1;
+  --card: #07100F;
   --card-foreground: #E2E8F0;
   --popover: #0B0F19;
   --popover-foreground: #E2E8F0;
-  --primary: #00D2FF;
+  --primary: #2DD4BF;
   --primary-foreground: #000000;
-  --secondary: #1E40AF;
+  --secondary: #164E63;
   --secondary-foreground: #FFFFFF;
-  --muted: #1a1f2e;
+  --muted: #0F1F1D;
   --muted-foreground: #94A3B8;
-  --accent: #1E40AF;
+  --accent: #0E7490;
   --accent-foreground: #FFFFFF;
   --destructive: #EF4444;
   --destructive-foreground: #FFFFFF;
-  --border: #1e293b;
-  --input: #1e293b;
-  --ring: #00D2FF;
-  --chart-1: #00D2FF;
-  --chart-2: #1E40AF;
+  --border: #1F3B37;
+  --input: #1F3B37;
+  --ring: #2DD4BF;
+  --chart-1: #2DD4BF;
+  --chart-2: #38BDF8;
   --chart-3: #10B981;
   --chart-4: #F59E0B;
   --chart-5: #EF4444;
   --radius: 0.5rem;
   --sidebar: #0B0F19;
   --sidebar-foreground: #E2E8F0;
-  --sidebar-primary: #00D2FF;
+  --sidebar-primary: #2DD4BF;
   --sidebar-primary-foreground: #000000;
-  --sidebar-accent: #1E40AF;
+  --sidebar-accent: #0E7490;
   --sidebar-accent-foreground: #FFFFFF;
-  --sidebar-border: #1e293b;
-  --sidebar-ring: #00D2FF;
+  --sidebar-border: #1F3B37;
+  --sidebar-ring: #2DD4BF;
   
   /* Custom cyber colors */
-  --cyber-blue: #00D2FF;
-  --cyber-blue-dim: #00D2FF33;
-  --cyber-navy: #1E40AF;
+  --cyber-blue: #2DD4BF;
+  --cyber-blue-dim: #2DD4BF33;
+  --cyber-navy: #164E63;
   --warning: #F59E0B;
   --success: #10B981;
   --critical: #EF4444;
@@ -95,5 +95,19 @@
   }
   body {
     @apply bg-background text-foreground;
+    background-image:
+      radial-gradient(circle at 12% 0%, rgba(45, 212, 191, 0.08), transparent 28rem),
+      linear-gradient(rgba(45, 212, 191, 0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(45, 212, 191, 0.025) 1px, transparent 1px);
+    background-size: auto, 36px 36px, 36px 36px;
+  }
+}
+
+@layer utilities {
+  .line-clamp-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 }

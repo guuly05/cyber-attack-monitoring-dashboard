@@ -8,26 +8,8 @@ const geist = Geist({ subsets: ["latin"], variable: "--font-geist-sans" })
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-geist-mono" })
 
 export const metadata: Metadata = {
-  title: 'CyberShield - Threat Monitoring Dashboard',
-  description: 'Real-time cyber attack monitoring and threat intelligence platform',
-  generator: 'v0.app',
-  icons: {
-    icon: [
-      {
-        url: '/icon-light-32x32.png',
-        media: '(prefers-color-scheme: light)',
-      },
-      {
-        url: '/icon-dark-32x32.png',
-        media: '(prefers-color-scheme: dark)',
-      },
-      {
-        url: '/icon.svg',
-        type: 'image/svg+xml',
-      },
-    ],
-    apple: '/apple-icon.png',
-  },
+  title: 'CyberShield SOC - Security Intelligence Dashboard',
+  description: 'Search-first SOC dashboard for threat intelligence, vulnerability triage, and entity security reports',
 }
 
 export default function RootLayout({

@@ -87,7 +87,7 @@ export async function GET(request: NextRequest) {
     console.error("CIRCL CVE API error:", error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to fetch from CIRCL CVE API",
+        error: "CIRCL CVE is unavailable. Please retry later.",
         status: "offline",
       },
       { status: 200 }

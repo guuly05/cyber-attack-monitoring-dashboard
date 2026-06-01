@@ -99,7 +99,7 @@ export async function GET(request: NextRequest) {
     console.error("AbuseIPDB API error:", error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to fetch from AbuseIPDB",
+        error: "AbuseIPDB is unavailable. Please retry later.",
         status: "offline",
       },
       { status: 200 }

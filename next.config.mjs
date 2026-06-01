@@ -13,7 +13,7 @@ const nextConfig = {
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob:",
           "font-src 'self' data:",
-          "connect-src 'self' https://api.abuseipdb.com https://cve.circl.lu https://vitals.vercel-insights.com https://vercel.live",
+          "connect-src 'self' https://vitals.vercel-insights.com https://vercel.live",
           "frame-ancestors 'none'",
           "base-uri 'self'",
           "form-action 'self'",

@@ -1,4 +1,5 @@
 import { Shield, Activity, Wifi, WifiOff } from "lucide-react"
+import Link from "next/link"
 
 interface HeaderProps {
   apiStatus?: {
@@ -21,6 +22,23 @@ export function DashboardHeader({ apiStatus }: HeaderProps) {
               <p className="text-xs text-muted-foreground">Threat Monitoring Dashboard</p>
             </div>
           </div>
+
+          <nav className="hidden items-center gap-1 md:flex">
+            {[
+              ["/", "Dashboard"],
+              ["/search", "Search"],
+              ["/threats", "Threats"],
+              ["/vulnerabilities", "CVEs"],
+            ].map(([href, label]) => (
+              <Link
+                key={href}
+                href={href}
+                className="rounded border border-transparent px-3 py-1.5 text-sm text-muted-foreground hover:border-primary/30 hover:bg-primary/10 hover:text-primary"
+              >
+                {label}
+              </Link>
+            ))}
+          </nav>
 
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-muted/50 border border-border">

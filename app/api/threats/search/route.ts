@@ -149,7 +149,7 @@ export async function GET(request: NextRequest) {
     console.error("Search API error:", error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Search failed",
+        error: "Search failed. Please retry later.",
         status: "error",
       },
       { status: 500 }

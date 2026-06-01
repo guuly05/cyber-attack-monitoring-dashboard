@@ -2,6 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import type { ThreatIndicator, APIStatus } from "@/lib/types"
+import type { ReportRequest, SecurityReport } from "@/lib/security-report"
 
 interface ThreatResponse {
   threats: ThreatIndicator[]
@@ -116,5 +117,31 @@ export function useThreatSearch(query: string) {
     enabled: query.length > 0,
     staleTime: 5 * 60 * 1000, // 5 minutes
     retry: 1,
+  })
+}
+
+async function fetchSecurityReport(request: ReportRequest): Promise<SecurityReport> {
+  const res = await fetch("/api/security/report", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(request),
+  })
+
+  if (!res.ok) {
+    const payload = await res.json().catch(() => null)
+    throw new Error(payload?.error ?? "Security report failed")
+  }
+
+  return res.json()
+}
+
+export function useSecurityReport(query: string, skipProviders: string[] = []) {
+  return useQuery({
+    queryKey: ["security-report", query, skipProviders],
+    queryFn: () => fetchSecurityReport({ query, skipProviders }),
+    enabled: query.trim().length > 0,
+    staleTime: 5 * 60 * 1000,
+    retry: 1,
+    refetchInterval: false,
   })
 }
