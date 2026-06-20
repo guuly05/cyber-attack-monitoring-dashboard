@@ -15,7 +15,8 @@ A portfolio-ready cyber threat intelligence dashboard built with Next.js. It vis
 
 ## Preview
 
-<img width="1901" height="937" alt="image" src="https://github.com/user-attachments/assets/a8f31de3-ee5b-4b89-8224-951b399291a7" />
+<img width="1902" height="946" alt="image" src="https://github.com/user-attachments/assets/2efaf889-5ba0-40ce-9af1-df5a278923e4" />
+
 
 
 ## Features
