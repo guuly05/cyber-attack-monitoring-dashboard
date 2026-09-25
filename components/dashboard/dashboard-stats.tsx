@@ -63,8 +63,15 @@ export function DashboardStats() {
   const malwareCount = threats.filter(t => t.type === "malware" || t.type === "ransomware").length
   const botnetCount = threats.filter(t => t.type === "botnet" || t.type === "c2").length
 
-  // Simulate 24h change (in real app, would compare with historical data)
-  const change24h = Math.floor(Math.random() * 30) - 10
+  // Deterministic comparison against the previous 24-hour slice prevents a
+  // server/client hydration mismatch and makes the metric explainable.
+  const anchor = threats.reduce((latest, threat) => Math.max(latest, Date.parse(threat.timestamp)), 0)
+  const currentWindow = threats.filter((threat) => anchor - Date.parse(threat.timestamp) <= 24 * 60 * 60 * 1000).length
+  const previousWindow = threats.filter((threat) => {
+    const age = anchor - Date.parse(threat.timestamp)
+    return age > 24 * 60 * 60 * 1000 && age <= 48 * 60 * 60 * 1000
+  }).length
+  const change24h = previousWindow === 0 ? (currentWindow > 0 ? 100 : 0) : Math.round(((currentWindow - previousWindow) / previousWindow) * 100)
 
   if (isLoading) {
     return (
