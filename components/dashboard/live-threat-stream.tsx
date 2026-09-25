@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { useLiveThreats } from "@/hooks/use-threats"
+import { useState, useMemo, useEffect, useRef } from "react"
+import { useLiveThreats, useSSEThreatStream } from "@/hooks/use-threats"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -91,9 +91,45 @@ function getTimeAgo(date: Date): string {
 }
 
 export function LiveThreatStream() {
-  const { threats, apiStatus, isLoading, lastUpdated, refetch } = useLiveThreats()
+  const { threats: pollThreats, apiStatus, isLoading, isError, lastUpdated, refetch } = useLiveThreats()
+  const { streamThreats, isConnected: isSSEConnected } = useSSEThreatStream(20)
   const [selectedThreat, setSelectedThreat] = useState<ThreatIndicator | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const [page, setPage] = useState(1)
+  const announced = useRef(new Set<string>())
+
+  useEffect(() => {
+    const onRefresh = () => refetch()
+    window.addEventListener("cybershield-refresh", onRefresh)
+    return () => window.removeEventListener("cybershield-refresh", onRefresh)
+  }, [refetch])
+
+  // Merge SSE real-time stream with polled threats
+  const threats = useMemo(() => {
+    const combined = [...streamThreats, ...pollThreats]
+    const map = new Map<string, ThreatIndicator>()
+    combined.forEach((t) => {
+      if (!map.has(t.id)) map.set(t.id, t)
+    })
+    return Array.from(map.values()).sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    )
+  }, [streamThreats, pollThreats])
+
+  useEffect(() => {
+    const critical = threats.filter((threat) => threat.riskScore >= 90 && !announced.current.has(threat.id))
+    if (!critical.length) return
+    critical.forEach((threat) => announced.current.add(threat.id))
+    const current = Number(window.localStorage.getItem("cybershield-unread-alerts") ?? 0)
+    window.localStorage.setItem("cybershield-unread-alerts", String(Math.min(99, current + critical.length)))
+    window.dispatchEvent(new Event("cybershield-alerts"))
+    const preferences = JSON.parse(window.localStorage.getItem("cybershield-settings") ?? "{}") as { browserNotifications?: boolean; sound?: boolean }
+    if (preferences.browserNotifications && "Notification" in window) {
+      if (Notification.permission === "granted") new Notification("CyberShield critical IOC", { body: `${critical[0].type.toUpperCase()} · ${critical[0].host}` })
+      else if (Notification.permission === "default") void Notification.requestPermission()
+    }
+    if (preferences.sound) { try { const context = new AudioContext(); const oscillator = context.createOscillator(); oscillator.connect(context.destination); oscillator.frequency.value = 740; oscillator.start(); oscillator.stop(context.currentTime + 0.12) } catch { /* audio is optional */ } }
+  }, [threats])
 
   const handleThreatClick = (threat: ThreatIndicator) => {
     setSelectedThreat(threat)
@@ -109,9 +145,17 @@ export function LiveThreatStream() {
               <Activity className="h-5 w-5 text-primary" />
             </div>
             <div>
-              <CardTitle className="text-lg">Live Threat Stream</CardTitle>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-lg">Live Threat Stream</CardTitle>
+                {isSSEConnected && (
+                  <Badge variant="outline" className="border-emerald-500/50 bg-emerald-500/10 text-emerald-300 font-mono text-[10px]">
+                    <span className="h-1.5 w-1.5 rounded-full bg-emerald-400 animate-ping mr-1" />
+                    SSE TELEMETRY ACTIVE
+                  </Badge>
+                )}
+              </div>
               <p className="text-xs text-muted-foreground mt-0.5">
-                Real-time feed from URLHaus & ThreatFox
+                Real-time feed from URLHaus, ThreatFox & Server Telemetry Stream
               </p>
             </div>
           </div>
@@ -136,13 +180,15 @@ export function LiveThreatStream() {
       </CardHeader>
       
       <CardContent>
+        {!isSSEConnected && <div role="status" className="mb-3 flex items-center justify-between rounded border border-yellow-500/30 bg-yellow-500/10 px-3 py-2 text-xs text-yellow-100"><span>Live connection is reconnecting. Cached provider data remains visible.</span><span className="font-mono">polling fallback active</span></div>}
         {lastUpdated && (
           <p className="text-xs text-muted-foreground mb-3">
             Last updated: {new Date(lastUpdated).toLocaleTimeString()}
           </p>
         )}
+        {isError && <div role="alert" className="mb-3 flex items-center justify-between rounded border border-red-500/30 bg-red-500/10 p-3 text-xs text-red-100"><span>One or more feeds failed. Showing the last available snapshot.</span><Button variant="outline" size="sm" onClick={() => refetch()}>Retry</Button></div>}
         
-        <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+        <div aria-live="polite" className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
           {isLoading && threats.length === 0 ? (
             <div className="flex items-center justify-center py-12">
               <div className="flex items-center gap-3 text-muted-foreground">
@@ -159,7 +205,7 @@ export function LiveThreatStream() {
               </p>
             </div>
           ) : (
-            threats.slice(0, 50).map((threat) => (
+            threats.slice((page - 1) * 20, page * 20).map((threat) => (
               <ThreatRow key={threat.id} threat={threat} onClick={() => handleThreatClick(threat)} />
             ))
           )}
@@ -167,9 +213,7 @@ export function LiveThreatStream() {
         
         {threats.length > 0 && (
           <div className="mt-4 pt-3 border-t border-border">
-          <p className="text-xs text-muted-foreground text-center">
-            Showing {Math.min(50, threats.length)} of {threats.length} threats | Click any threat for details
-          </p>
+          <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-xs text-muted-foreground">Showing {(page - 1) * 20 + 1}-{Math.min(page * 20, threats.length)} of {threats.length} threats</p><div className="flex gap-1"><Button variant="outline" size="sm" disabled={page === 1} onClick={() => setPage((current) => current - 1)}>Previous</Button><Button variant="outline" size="sm" disabled={page * 20 >= threats.length} onClick={() => setPage((current) => current + 1)}>Next</Button></div></div>
         </div>
       )}
 
