@@ -1,23 +1,18 @@
 "use client"
 
-import { Suspense, useState } from "react"
+import { Suspense, useEffect, useState } from "react"
 import { DashboardHeader } from "@/components/dashboard/header"
 import { SecurityCommandCenter } from "@/components/dashboard/security-command-center"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { FileWarning, Search } from "lucide-react"
-
-const priorityCves = [
-  "CVE-2021-44228",
-  "CVE-2023-34362",
-  "CVE-2024-3094",
-  "CVE-2024-3400",
-  "CVE-2025-53770",
-]
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function VulnerabilitiesPage() {
-  const [selected, setSelected] = useState("CVE-2021-44228")
+  const [priorityCves, setPriorityCves] = useState<string[]>([])
+  const [selected, setSelected] = useState("")
+  useEffect(() => { fetch("/api/threats/cve?recent=1").then((response) => response.json()).then((payload) => { const ids = (payload.data ?? []).map((item: { id: string }) => item.id).filter(Boolean); setPriorityCves(ids); setSelected((current) => current || ids[0] || "CVE-2021-44228") }).catch(() => setSelected("CVE-2021-44228")) }, [])
 
   return (
     <div className="min-h-screen bg-background">
@@ -45,7 +40,7 @@ export default function VulnerabilitiesPage() {
           </div>
         </section>
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="container mx-auto px-4"><Skeleton className="h-64 w-full" /></div>}>
           <SecurityCommandCenter key={selected} initialQuery={selected} compact />
         </Suspense>
 
