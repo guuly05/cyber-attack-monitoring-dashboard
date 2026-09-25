@@ -65,6 +65,51 @@ export function useLiveThreats() {
   }
 }
 
+import { useEffect, useState } from "react"
+
+export function useSSEThreatStream(maxEvents: number = 25) {
+  const [streamThreats, setStreamThreats] = useState<ThreatIndicator[]>([])
+  const [isConnected, setIsConnected] = useState(false)
+
+  useEffect(() => {
+    let eventSource: EventSource | null = null
+
+    try {
+      eventSource = new EventSource("/api/threats/stream")
+
+      eventSource.onopen = () => {
+        setIsConnected(true)
+      }
+
+      eventSource.addEventListener("threat", (event) => {
+        try {
+          const newThreat: ThreatIndicator = JSON.parse(event.data)
+          setStreamThreats((prev) => [newThreat, ...prev].slice(0, maxEvents))
+        } catch {
+          // ignore parse errors
+        }
+      })
+
+      eventSource.onerror = () => {
+        setIsConnected(false)
+      }
+    } catch {
+      setIsConnected(false)
+    }
+
+    return () => {
+      if (eventSource) {
+        eventSource.close()
+      }
+    }
+  }, [maxEvents])
+
+  return {
+    streamThreats,
+    isConnected,
+  }
+}
+
 interface SearchResult {
   query: string
   queryType: "ip" | "domain" | "cve"
