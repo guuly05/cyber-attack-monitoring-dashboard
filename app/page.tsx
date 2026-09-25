@@ -7,6 +7,8 @@ import { LiveThreatStream } from "@/components/dashboard/live-threat-stream"
 import { ThreatTypeChart, RiskScoreChart, SourceActivityChart } from "@/components/dashboard/threat-charts"
 import { useLiveThreats } from "@/hooks/use-threats"
 import { SecurityCommandCenter } from "@/components/dashboard/security-command-center"
+import { ThreatMap } from "@/components/dashboard/threat-map"
+import { Skeleton } from "@/components/ui/skeleton"
 
 export default function DashboardPage() {
   const { apiStatus } = useLiveThreats()
@@ -16,12 +18,16 @@ export default function DashboardPage() {
       <DashboardHeader apiStatus={apiStatus} />
       
       <main className="pb-6">
-        <Suspense fallback={null}>
+        <Suspense fallback={<div className="container mx-auto px-4 pt-6"><Skeleton className="h-72 w-full" /></div>}>
           <SecurityCommandCenter compact />
         </Suspense>
 
         <section className="container mx-auto mt-6 px-4">
           <DashboardStats />
+        </section>
+
+        <section className="container mx-auto mt-6 px-4">
+          <ThreatMap />
         </section>
 
         <div className="container mx-auto mt-6 grid grid-cols-1 gap-6 px-4 xl:grid-cols-3">
