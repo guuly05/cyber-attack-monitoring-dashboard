@@ -20,6 +20,19 @@ export async function GET(request: NextRequest) {
   const searchParams = request.nextUrl.searchParams
   const cveId = searchParams.get("id")
 
+  if (!cveId && searchParams.get("recent") !== null) {
+    try {
+      const start = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().replace(".000Z", "Z")
+      const response = await fetch(`https://services.nvd.nist.gov/rest/json/cves/2.0?pubStartDate=${encodeURIComponent(start)}&resultsPerPage=12`, { headers: { Accept: "application/json" }, next: { revalidate: 1800 } })
+      if (!response.ok) throw new Error(`NVD returned ${response.status}`)
+      const payload = await response.json() as { vulnerabilities?: Array<{ cve?: { id?: string; descriptions?: Array<{ lang?: string; value?: string }>; metrics?: Record<string, Array<{ cvssData?: { baseScore?: number } }>> } }> }
+      const cves = (payload.vulnerabilities ?? []).map((item) => ({ id: item.cve?.id ?? "", summary: item.cve?.descriptions?.find((description) => description.lang === "en")?.value ?? "No description available", cvss: item.cve?.metrics?.cvssMetricV31?.[0]?.cvssData?.baseScore ?? item.cve?.metrics?.cvssMetricV30?.[0]?.cvssData?.baseScore })).filter((item) => item.id)
+      return NextResponse.json({ data: cves, status: "online", timestamp: new Date().toISOString() }, { headers: { "Cache-Control": "public, s-maxage=1800, stale-while-revalidate=3600" } })
+    } catch (error) {
+      return NextResponse.json({ data: [], status: "offline", error: error instanceof Error ? error.message : "NVD unavailable", timestamp: new Date().toISOString() })
+    }
+  }
+
   if (!cveId) {
     return NextResponse.json(
       { error: "CVE ID is required", status: "error" },
