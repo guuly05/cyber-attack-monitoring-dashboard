@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useMemo, useState } from "react"
+import { FormEvent, useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
   AlertTriangle,
@@ -61,7 +61,25 @@ export function SecurityCommandCenter({ initialQuery = "", compact = false }: Se
   const [input, setInput] = useState(queryFromUrl)
   const [query, setQuery] = useState(queryFromUrl)
   const [skipProviders, setSkipProviders] = useState<string[]>([])
+  const [history, setHistory] = useState<string[]>([])
+  const [saved, setSaved] = useState<string[]>([])
   const { data, isFetching, isError, error, refetch } = useSecurityReport(query, skipProviders)
+
+  useEffect(() => {
+    try {
+      setHistory(JSON.parse(window.localStorage.getItem("cybershield-search-history") ?? "[]"))
+      setSaved(JSON.parse(window.localStorage.getItem("cybershield-saved-investigations") ?? "[]"))
+    } catch { /* local storage is optional */ }
+  }, [])
+
+  useEffect(() => {
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === "/" && document.activeElement?.tagName !== "INPUT") { event.preventDefault(); document.getElementById("soc-global-search")?.focus() }
+      if (event.key.toLowerCase() === "r" && document.activeElement?.tagName !== "INPUT" && document.activeElement?.tagName !== "TEXTAREA") window.dispatchEvent(new Event("cybershield-refresh"))
+    }
+    window.addEventListener("keydown", onKeyDown)
+    return () => window.removeEventListener("keydown", onKeyDown)
+  }, [])
 
   const submit = (event: FormEvent) => {
     event.preventDefault()
@@ -69,6 +87,9 @@ export function SecurityCommandCenter({ initialQuery = "", compact = false }: Se
     if (!next) return
     setSkipProviders([])
     setQuery(next)
+    const nextHistory = [next, ...history.filter((item) => item !== next)].slice(0, 8)
+    setHistory(nextHistory)
+    window.localStorage.setItem("cybershield-search-history", JSON.stringify(nextHistory))
     router.replace(`/search?q=${encodeURIComponent(next)}`)
   }
 
@@ -91,6 +112,7 @@ export function SecurityCommandCenter({ initialQuery = "", compact = false }: Se
             <div className="relative flex-1">
               <Search className="pointer-events-none absolute left-4 top-1/2 h-5 w-5 -translate-y-1/2 text-teal-300" />
               <Input
+                id="soc-global-search"
                 value={input}
                 onChange={(event) => setInput(event.target.value)}
                 placeholder="Search company, domain, IP, hash, or CVE-ID"
@@ -102,6 +124,10 @@ export function SecurityCommandCenter({ initialQuery = "", compact = false }: Se
               Investigate
             </Button>
           </form>
+          <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-400">
+            <span>Recent:</span>{history.slice(0, 5).map((item) => <button key={item} type="button" onClick={() => { setInput(item); setQuery(item) }} className="rounded border border-white/10 bg-white/[0.03] px-2 py-1 font-mono hover:border-teal-300/50">{item}</button>)}
+            {query && <button type="button" onClick={() => { const next = [...new Set([...saved, query])].slice(-20); setSaved(next); window.localStorage.setItem("cybershield-saved-investigations", JSON.stringify(next)) }} className="rounded border border-teal-300/30 px-2 py-1 text-teal-200">☆ Save investigation</button>}
+          </div>
           <div className="mt-4 flex flex-wrap gap-2 text-xs text-slate-400">
             {["cloudflare.com", "8.8.8.8", "CVE-2021-44228", "Microsoft"].map((sample) => (
               <button
